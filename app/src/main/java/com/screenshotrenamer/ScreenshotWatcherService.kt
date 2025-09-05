@@ -57,6 +57,16 @@ class ScreenshotWatcherService : LifecycleService() {
             ACTION_STOP_MONITORING -> {
                 stopMonitoring()
             }
+            "RENAME_SUCCESS" -> {
+                // 处理从PermissionActivity传来的重命名成功消息
+                val originalName = intent.getStringExtra("original_name")
+                val newName = intent.getStringExtra("new_name")
+                val packageName = intent.getStringExtra("package_name")
+                
+                if (originalName != null && newName != null && packageName != null) {
+                    showRenameSuccessNotification(originalName, newName, packageName)
+                }
+            }
         }
         return super.onStartCommand(intent, flags, startId)
     }
@@ -247,34 +257,48 @@ class ScreenshotWatcherService : LifecycleService() {
 
     private fun requestWritePermission(context: Context, uri: Uri, originalName: String, newName: String) {
         try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                // 创建写入请求
-                val writeRequest = MediaStore.createWriteRequest(context.contentResolver, listOf(uri))
-                
-                // 创建通知，引导用户点击授权
-                val notification = NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
-                    .setContentTitle(getString(R.string.permission_write_title))
-                    .setContentText(getString(R.string.permission_write_content, originalName))
-                    .setStyle(
-                        NotificationCompat.BigTextStyle()
-                            .setBigContentTitle(getString(R.string.permission_write_title))
-                            .bigText(getString(R.string.permission_write_big_text, originalName, newName))
-                    )
-                    .setSmallIcon(R.drawable.ic_screenshot)
-                    .setPriority(NotificationCompat.PRIORITY_HIGH)
-                    .setAutoCancel(true)
-                    .setContentIntent(writeRequest)
-                    .build()
+            // 获取包名（用于通知显示）
+            val packageName = newName.substringAfterLast("_").substringBeforeLast(".")
+            
+            // 创建启动权限Activity的Intent
+            val permissionIntent = Intent(context, PermissionActivity::class.java).apply {
+                putExtra(PermissionActivity.EXTRA_URI, uri)
+                putExtra(PermissionActivity.EXTRA_ORIGINAL_NAME, originalName)
+                putExtra(PermissionActivity.EXTRA_NEW_NAME, newName)
+                putExtra(PermissionActivity.EXTRA_PACKAGE_NAME, packageName)
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            }
+            
+            val pendingIntent = PendingIntent.getActivity(
+                context,
+                System.currentTimeMillis().toInt(),
+                permissionIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+            
+            // 创建通知，引导用户点击授权
+            val notification = NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
+                .setContentTitle(getString(R.string.permission_write_title))
+                .setContentText(getString(R.string.permission_write_content, originalName))
+                .setStyle(
+                    NotificationCompat.BigTextStyle()
+                        .setBigContentTitle(getString(R.string.permission_write_title))
+                        .bigText(getString(R.string.permission_write_big_text, originalName, newName))
+                )
+                .setSmallIcon(R.drawable.ic_screenshot)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setAutoCancel(true)
+                .setContentIntent(pendingIntent)
+                .build()
 
-                val notificationManager = NotificationManagerCompat.from(this)
-                try {
-                    if (NotificationManagerCompat.from(this).areNotificationsEnabled()) {
-                        notificationManager.notify("write_permission_${System.currentTimeMillis()}".hashCode(), notification)
-                        Log.d(TAG, "Write permission notification sent")
-                    }
-                } catch (e: SecurityException) {
-                    Log.w(TAG, "无法发送权限请求通知", e)
+            val notificationManager = NotificationManagerCompat.from(this)
+            try {
+                if (NotificationManagerCompat.from(this).areNotificationsEnabled()) {
+                    notificationManager.notify("write_permission_${System.currentTimeMillis()}".hashCode(), notification)
+                    Log.d(TAG, "Write permission notification sent")
                 }
+            } catch (e: SecurityException) {
+                Log.w(TAG, "无法发送权限请求通知", e)
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error requesting write permission", e)

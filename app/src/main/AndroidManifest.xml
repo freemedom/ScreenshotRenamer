@@ -41,6 +41,13 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".PermissionActivity"
+            android:exported="false"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:excludeFromRecents="true"
+            android:launchMode="singleTop" />
+
         <service
             android:name=".ScreenshotWatcherService"
             android:enabled="true"
