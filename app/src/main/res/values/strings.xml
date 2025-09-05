@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">截图重命名助手</string>
+    
+    <!-- 主界面 -->
+    <string name="main_title">截图重命名助手</string>
+    <string name="status_running">监控状态：运行中</string>
+    <string name="status_stopped">监控状态：已停止</string>
+    <string name="btn_start_monitoring">开始监控</string>
+    <string name="btn_stop_monitoring">停止监控</string>
+    <string name="feature_description">功能说明：\n• 监控系统新增截图\n• 自动重命名添加应用包名\n• 例如：Screenshot_xxx_com.duolingo.jpg</string>
+    
+    <!-- 权限相关 -->
+    <string name="permission_usage_stats_title">需要使用情况访问权限</string>
+    <string name="permission_usage_stats_message">为了获取当前前台应用信息，需要在设置中开启"使用情况访问"权限</string>
+    <string name="permission_go_settings">去设置</string>
+    <string name="permission_cancel">取消</string>
+    
+    <!-- 通知相关 -->
+    <string name="notification_channel_name">截图监控服务</string>
+    <string name="notification_channel_description">截图重命名助手后台监控服务</string>
+    <string name="notification_service_title">截图监控服务运行中</string>
+    <string name="notification_service_content">正在监控系统截图并自动重命名</string>
+    <string name="notification_action_stop">停止</string>
+    
+    <string name="notification_rename_success_title">截图重命名成功</string>
+    <string name="notification_rename_success_content">应用：%1$s</string>
+    <string name="notification_rename_success_big_text">应用：%1$s\n原文件名：%2$s\n新文件名：%3$s</string>
+    
+    <!-- Toast消息 -->
+    <string name="toast_monitoring_started">截图监控已开启</string>
+    <string name="toast_monitoring_stopped">截图监控已停止</string>
+</resources>

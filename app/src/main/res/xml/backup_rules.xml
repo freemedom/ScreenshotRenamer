@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<full-backup-content>
+    <!-- 
+    Specify the files that should be backed up.
+    By default, all files are backed up.
+    -->
+</full-backup-content>

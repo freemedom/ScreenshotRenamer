@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="24dp"
+    android:gravity="center"
+    android:background="@color/background_gray"
+    tools:context=".MainActivity">
+
+    <ImageView
+        android:layout_width="80dp"
+        android:layout_height="80dp"
+        android:src="@drawable/ic_screenshot"
+        android:background="@drawable/circle_background"
+        android:padding="16dp"
+        android:layout_marginBottom="24dp"
+        app:tint="@color/primary_blue" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/main_title"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:textColor="@color/black"
+        android:layout_marginBottom="32dp" />
+    
+    <TextView
+        android:id="@+id/tv_status"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/status_stopped"
+        android:textSize="16sp"
+        android:textColor="@color/status_stopped"
+        android:layout_marginBottom="24dp" />
+    
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_toggle_monitoring"
+        android:layout_width="200dp"
+        android:layout_height="60dp"
+        android:text="@string/btn_start_monitoring"
+        android:textSize="18sp"
+        android:layout_marginBottom="32dp"
+        app:cornerRadius="30dp"
+        app:icon="@drawable/ic_screenshot"
+        app:iconGravity="textStart"
+        app:iconPadding="8dp" />
+    
+    <androidx.cardview.widget.CardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        app:cardCornerRadius="12dp"
+        app:cardElevation="4dp"
+        app:cardBackgroundColor="@color/white">
+        
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/feature_description"
+            android:textSize="14sp"
+            android:textColor="@color/status_stopped"
+            android:padding="16dp"
+            android:gravity="center"
+            android:lineSpacingExtra="4dp" />
+            
+    </androidx.cardview.widget.CardView>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="注意：首次使用需要授予媒体访问权限和使用情况访问权限"
+        android:textSize="12sp"
+        android:textColor="@color/status_stopped"
+        android:gravity="center"
+        android:layout_marginTop="16dp"
+        android:padding="8dp" />
+        
+</LinearLayout>
