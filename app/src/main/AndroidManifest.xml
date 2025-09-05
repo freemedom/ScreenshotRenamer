@@ -13,6 +13,9 @@
 
     <!-- 后台常驻监听（建议使用前台服务+通知） -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    
+    <!-- 前台服务数据同步权限（Android 14+） -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
 
     <!-- 显示通知权限（Android 13+） -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
@@ -42,7 +45,7 @@
             android:name=".ScreenshotWatcherService"
             android:enabled="true"
             android:exported="false"
-            android:foregroundServiceType="mediaProjection" />
+            android:foregroundServiceType="dataSync" />
 
     </application>
 
