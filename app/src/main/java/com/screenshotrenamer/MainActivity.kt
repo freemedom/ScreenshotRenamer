@@ -123,6 +123,13 @@ class MainActivity : AppCompatActivity() {
         } else {
             ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE)
         }
+        
+        // 检查写入外部存储权限（Android 10及以下）
+        val writeExternalStoragePermission = if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q) {
+            ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+        } else {
+            PackageManager.PERMISSION_GRANTED // Android 11+不需要此权限
+        }
 
         // 检查通知权限（Android 13+）
         val notificationPermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -148,6 +155,7 @@ class MainActivity : AppCompatActivity() {
         val usagePermission = checkUsageStatsPermission()
 
         return mediaPermission == PackageManager.PERMISSION_GRANTED &&
+                writeExternalStoragePermission == PackageManager.PERMISSION_GRANTED &&
                 notificationPermission == PackageManager.PERMISSION_GRANTED &&
                 mediaLocationPermission == PackageManager.PERMISSION_GRANTED &&
                 manageMediaPermission &&
@@ -214,6 +222,13 @@ class MainActivity : AppCompatActivity() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_MEDIA_LOCATION) != PackageManager.PERMISSION_GRANTED) {
                 permissionsToRequest.add(Manifest.permission.ACCESS_MEDIA_LOCATION)
+            }
+        }
+        
+        // 检查写入外部存储权限（Android 10及以下）
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                permissionsToRequest.add(Manifest.permission.WRITE_EXTERNAL_STORAGE)
             }
         }
 

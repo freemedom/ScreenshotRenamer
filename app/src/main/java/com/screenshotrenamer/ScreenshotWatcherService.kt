@@ -268,7 +268,7 @@ class ScreenshotWatcherService : LifecycleService() {
 
         return try {
             // 检查MANAGE_MEDIA权限（仅Android 12+支持MediaStore.canManageMedia()）
-            val canManageMedia = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val canManageMedia = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) { // S是Android 12
                 MediaStore.canManageMedia(context)
             } else {
                 // Android 12以下版本没有MediaStore.canManageMedia()方法
@@ -287,7 +287,7 @@ class ScreenshotWatcherService : LifecycleService() {
             }
             
             Log.d(TAG, "canManageMedia: $canManageMedia (SDK: ${Build.VERSION.SDK_INT})")
-            if (!canManageMedia && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) { // TIRAMISU是Android 13
+            if (!canManageMedia && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) { // TIRAMISU是Android 13
                 Log.w(TAG, "No MANAGE_MEDIA permission, requesting user authorization")
                 // requestWritePermission(context, uri, originalName, newName)
                 return false
@@ -303,6 +303,9 @@ class ScreenshotWatcherService : LifecycleService() {
                 false
             }
         } catch (e: RecoverableSecurityException) {
+            Log.w(TAG, "RecoverableSecurityException caught: ${e.message}", e)
+            Log.d(TAG, "Exception details: ${e.javaClass.simpleName}, cause: ${e.cause}")
+            
             if (hasManageMediaPermission) {
                 // 有MANAGE_MEDIA权限但还是失败了，这很奇怪
                 Log.w(TAG, "Has MANAGE_MEDIA permission but still got RecoverableSecurityException")
