@@ -267,10 +267,27 @@ class ScreenshotWatcherService : LifecycleService() {
         }
 
         return try {
-            // 检查一下MediaStore.canManageMedia是否获得权限
-            val canManageMedia = MediaStore.canManageMedia(context)
-            Log.d(TAG, "canManageMedia: $canManageMedia")
-            if (!canManageMedia) {
+            // 检查MANAGE_MEDIA权限（仅Android 12+支持MediaStore.canManageMedia()）
+            val canManageMedia = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                MediaStore.canManageMedia(context)
+            } else {
+                // Android 12以下版本没有MediaStore.canManageMedia()方法
+                // 使用AppOpsManager检查MANAGE_MEDIA权限
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    val appOps = context.getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
+                    val mode = appOps.checkOpNoThrow(
+                        "android:manage_media",
+                        Process.myUid(), 
+                        context.packageName
+                    )
+                    mode == AppOpsManager.MODE_ALLOWED
+                } else {
+                    false // Android 13以下没有MANAGE_MEDIA权限
+                }
+            }
+            
+            Log.d(TAG, "canManageMedia: $canManageMedia (SDK: ${Build.VERSION.SDK_INT})")
+            if (!canManageMedia && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) { // TIRAMISU是Android 13
                 Log.w(TAG, "No MANAGE_MEDIA permission, requesting user authorization")
                 // requestWritePermission(context, uri, originalName, newName)
                 return false
