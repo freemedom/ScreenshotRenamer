@@ -136,7 +136,7 @@ class PermissionActivity : AppCompatActivity() {
             // 执行更新操作
             val rowsUpdated = contentResolver.update(uri, cv, null, null)
             if (rowsUpdated > 0) {
-                Log.d(TAG, "Screenshot renamed successfully: $originalName -> $newName")
+                Log.d(TAG, "139Screenshot renamed successfully: $originalName -> $newName")
                 
                 // 通知Service显示成功消息
                 val intent = Intent(this, ScreenshotWatcherService::class.java).apply {

@@ -35,10 +35,15 @@ class ScreenshotWatcherService : LifecycleService() {
         private const val TAG = "ScreenshotWatcher"
         private const val PREFS_NAME = "screenshot_renamer_prefs"
         private const val KEY_HAS_WRITE_PERMISSION = "has_write_permission"
+        private const val DEBOUNCE_DELAY = 6000L // 2秒防抖延迟
     }
     
     // SharedPreferences（暂时保留，可能用于其他配置）
     private lateinit var prefs: SharedPreferences
+    
+    // 防抖相关变量
+    private val processedFiles = mutableSetOf<String>()
+    private var lastProcessTime = 0L
 
     private val observer = object : ContentObserver(Handler(Looper.getMainLooper())) {
         override fun onChange(selfChange: Boolean, uri: Uri?) {
@@ -200,6 +205,25 @@ class ScreenshotWatcherService : LifecycleService() {
             // 查询最近的截图
             val screenshotInfo = ScreenshotUtils.queryRecentScreenshot(this, uri) ?: return
             val (screenshotUri, originalName) = screenshotInfo
+            Log.d(TAG, "208")
+
+            // 防抖逻辑：如果同一文件在短时间内多次触发，则忽略
+            val currentTime = System.currentTimeMillis()
+            if (processedFiles.contains(originalName)) {
+                if (currentTime - lastProcessTime < DEBOUNCE_DELAY) {
+                    Log.d(TAG, "Debounce: Ignoring duplicate event for $originalName")
+                    return
+                }
+            }
+            
+            // 清理过期的处理记录（超过5分钟的记录）
+            if (currentTime - lastProcessTime > 300000) { // 5分钟
+                processedFiles.clear()
+            }
+            
+            // 记录当前文件和时间
+            processedFiles.add(originalName)
+            lastProcessTime = currentTime
 
             Log.d(TAG, "Found new screenshot: $originalName")
 
@@ -221,7 +245,7 @@ class ScreenshotWatcherService : LifecycleService() {
                 else originalName to ""
                 val newName = "${base}_${packageName}${ext}"
 
-                Log.d(TAG, "Screenshot renamed successfully: $originalName -> $newName")
+                Log.d(TAG, "224Screenshot renamed successfully: $originalName -> $newName")
 
                 // 显示成功通知
                 showRenameSuccessNotification(originalName, newName, packageName)
@@ -296,7 +320,7 @@ class ScreenshotWatcherService : LifecycleService() {
             Log.d(TAG, "uri: $uri")
             val rowsUpdated = context.contentResolver.update(uri, cv, null, null)
             if (rowsUpdated > 0) {
-                Log.d(TAG, "Screenshot renamed successfully: $originalName -> $newName")
+                Log.d(TAG, "299Screenshot renamed successfully: $originalName -> $newName")
                 true
             } else {
                 Log.w(TAG, "No rows updated when renaming screenshot")
