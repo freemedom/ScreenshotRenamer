@@ -8,6 +8,7 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Environment
 import android.os.Process
 import android.provider.Settings
 import android.widget.Toast
@@ -140,6 +141,9 @@ class MainActivity : AppCompatActivity() {
         // 检查媒体管理权限（Android 13+）
         val manageMediaPermission = checkManageMediaPermission()
 
+        // 检查外部存储管理权限（Android 11+）
+        val manageExternalStoragePermission = checkManageExternalStoragePermission()
+
         // 检查使用情况访问权限
         val usagePermission = checkUsageStatsPermission()
 
@@ -147,6 +151,7 @@ class MainActivity : AppCompatActivity() {
                 notificationPermission == PackageManager.PERMISSION_GRANTED &&
                 mediaLocationPermission == PackageManager.PERMISSION_GRANTED &&
                 manageMediaPermission &&
+                manageExternalStoragePermission &&
                 usagePermission
     }
 
@@ -170,6 +175,16 @@ class MainActivity : AppCompatActivity() {
             mode == AppOpsManager.MODE_ALLOWED
         } else {
             // Android 13以下不需要此权限检查
+            true
+        }
+    }
+
+    private fun checkManageExternalStoragePermission(): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            // Android 11+：检查MANAGE_EXTERNAL_STORAGE权限
+            Environment.isExternalStorageManager()
+        } else {
+            // Android 11以下不需要此权限
             true
         }
     }
@@ -204,11 +219,39 @@ class MainActivity : AppCompatActivity() {
 
         if (permissionsToRequest.isNotEmpty()) {
             permissionLauncher.launch(permissionsToRequest.toTypedArray())
+        } else if (!checkManageExternalStoragePermission()) {
+            showManageExternalStoragePermissionDialog()
         } else if (!checkManageMediaPermission()) {
             showManageMediaPermissionDialog()
         } else if (!checkUsageStatsPermission()) {
             showUsageStatsPermissionDialog()
         }
+    }
+
+    private fun showManageExternalStoragePermissionDialog() {
+        AlertDialog.Builder(this)
+            .setTitle("需要管理外部存储权限")
+            .setMessage("为了完全管理外部存储文件，需要在设置中开启\"所有文件访问权限\"")
+            .setPositiveButton(R.string.permission_go_settings) { _, _ ->
+                try {
+                    val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION)
+                    intent.data = Uri.parse("package:$packageName")
+                    startActivity(intent)
+                } catch (e: Exception) {
+                    // 如果无法直接跳转，则跳转到所有文件访问权限设置页面
+                    try {
+                        val intent = Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION)
+                        startActivity(intent)
+                    } catch (e2: Exception) {
+                        // 最后的备用方案：跳转到应用信息页面
+                        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                        intent.data = Uri.parse("package:$packageName")
+                        startActivity(intent)
+                    }
+                }
+            }
+            .setNegativeButton(R.string.permission_cancel, null)
+            .show()
     }
 
     private fun showManageMediaPermissionDialog() {
