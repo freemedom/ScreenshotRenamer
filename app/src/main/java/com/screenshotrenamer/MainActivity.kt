@@ -5,6 +5,7 @@ import android.app.AppOpsManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Process
@@ -129,11 +130,15 @@ class MainActivity : AppCompatActivity() {
             PackageManager.PERMISSION_GRANTED // 旧版本默认有通知权限
         }
 
+        // 检查媒体管理权限（Android 12+）
+        val manageMediaPermission = checkManageMediaPermission()
+
         // 检查使用情况访问权限
         val usagePermission = checkUsageStatsPermission()
 
         return mediaPermission == PackageManager.PERMISSION_GRANTED &&
                 notificationPermission == PackageManager.PERMISSION_GRANTED &&
+                manageMediaPermission &&
                 usagePermission
     }
 
@@ -144,6 +149,21 @@ class MainActivity : AppCompatActivity() {
             Process.myUid(), packageName
         )
         return mode == AppOpsManager.MODE_ALLOWED
+    }
+
+    private fun checkManageMediaPermission(): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            // Android 13+：检查MANAGE_MEDIA权限
+            val appOps = getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
+            val mode = appOps.checkOpNoThrow(
+                "android:manage_media", // 使用字符串常量代替OPSTR_MANAGE_MEDIA
+                Process.myUid(), packageName
+            )
+            mode == AppOpsManager.MODE_ALLOWED
+        } else {
+            // Android 13以下不需要此权限检查
+            true
+        }
     }
 
     private fun requestPermissions() {
@@ -169,9 +189,31 @@ class MainActivity : AppCompatActivity() {
 
         if (permissionsToRequest.isNotEmpty()) {
             permissionLauncher.launch(permissionsToRequest.toTypedArray())
+        } else if (!checkManageMediaPermission()) {
+            showManageMediaPermissionDialog()
         } else if (!checkUsageStatsPermission()) {
             showUsageStatsPermissionDialog()
         }
+    }
+
+    private fun showManageMediaPermissionDialog() {
+        AlertDialog.Builder(this)
+            .setTitle("需要媒体管理权限")
+            .setMessage("为了直接重命名截图文件而无需每次授权，需要在设置中开启\"媒体管理\"权限")
+            .setPositiveButton(R.string.permission_go_settings) { _, _ ->
+                try {
+                    val intent = Intent(Settings.ACTION_REQUEST_MANAGE_MEDIA)
+                    intent.data = Uri.parse("package:$packageName")
+                    startActivity(intent)
+                } catch (e: Exception) {
+                    // 如果无法直接跳转，则跳转到应用信息页面
+                    val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                    intent.data = Uri.parse("package:$packageName")
+                    startActivity(intent)
+                }
+            }
+            .setNegativeButton(R.string.permission_cancel, null)
+            .show()
     }
 
     private fun showUsageStatsPermissionDialog() {
