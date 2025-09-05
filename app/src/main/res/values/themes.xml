@@ -15,4 +15,14 @@
     </style>
 
     <style name="Theme.ScreenshotRenamer" parent="Base.Theme.ScreenshotRenamer" />
+    
+    <!-- 透明Activity主题，兼容AppCompat -->
+    <style name="Theme.ScreenshotRenamer.Transparent" parent="Base.Theme.ScreenshotRenamer">
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowContentOverlay">@null</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowIsFloating">true</item>
+        <item name="android:backgroundDimEnabled">false</item>
+    </style>
 </resources>
