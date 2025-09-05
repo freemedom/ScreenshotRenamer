@@ -1,5 +1,6 @@
 package com.screenshotrenamer
 
+import android.app.AppOpsManager
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -15,6 +16,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import android.os.Process
 import android.provider.MediaStore
 import android.util.Log
 import androidx.core.app.NotificationCompat
@@ -35,8 +37,7 @@ class ScreenshotWatcherService : LifecycleService() {
         private const val KEY_HAS_WRITE_PERMISSION = "has_write_permission"
     }
     
-    // 用于跟踪是否已经获得过写入权限的标志
-    private var hasWritePermission = false
+    // SharedPreferences（暂时保留，可能用于其他配置）
     private lateinit var prefs: SharedPreferences
 
     private val observer = object : ContentObserver(Handler(Looper.getMainLooper())) {
@@ -55,10 +56,9 @@ class ScreenshotWatcherService : LifecycleService() {
         super.onCreate()
         createNotificationChannel()
         
-        // 初始化SharedPreferences并恢复权限状态
+        // 初始化SharedPreferences（用于可能的配置存储）
         prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        hasWritePermission = prefs.getBoolean(KEY_HAS_WRITE_PERMISSION, false)
-        Log.d(TAG, "Service created, hasWritePermission restored: $hasWritePermission")
+        Log.d(TAG, "Service created")
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -76,8 +76,7 @@ class ScreenshotWatcherService : LifecycleService() {
                 val packageName = intent.getStringExtra("package_name")
                 
                 if (originalName != null && newName != null && packageName != null) {
-                    // 用户已经授权成功，设置权限标志并持久化
-                    setWritePermission(true)
+                    // 处理重命名成功
                     showRenameSuccessNotification(originalName, newName, packageName)
                 }
             }
@@ -255,28 +254,38 @@ class ScreenshotWatcherService : LifecycleService() {
             put(MediaStore.MediaColumns.DISPLAY_NAME, newName)
         }
 
+        // 检查是否有MANAGE_MEDIA权限
+        val hasManageMediaPermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val appOps = context.getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
+            val mode = appOps.checkOpNoThrow(
+                AppOpsManager.OPSTR_MANAGE_MEDIA,
+                Process.myUid(), context.packageName
+            )
+            mode == AppOpsManager.MODE_ALLOWED
+        } else {
+            false
+        }
+
         return try {
             val rowsUpdated = context.contentResolver.update(uri, cv, null, null)
             if (rowsUpdated > 0) {
-                // 重命名成功，如果之前没有权限，现在设置为已有权限
-                if (!hasWritePermission) {
-                    setWritePermission(true)
-                }
+                Log.d(TAG, "Screenshot renamed successfully: $originalName -> $newName")
                 true
             } else {
+                Log.w(TAG, "No rows updated when renaming screenshot")
                 false
             }
         } catch (e: RecoverableSecurityException) {
-            Log.d(TAG, "RecoverableSecurityException occurred")
-            if (hasWritePermission) {
-                // 理论上不应该到这里，如果到了说明权限状态有问题
-                Log.w(TAG, "Permission was granted before but still got RecoverableSecurityException")
-                setWritePermission(false)
+            if (hasManageMediaPermission) {
+                // 有MANAGE_MEDIA权限但还是失败了，这很奇怪
+                Log.w(TAG, "Has MANAGE_MEDIA permission but still got RecoverableSecurityException")
+                false
+            } else {
+                // 没有MANAGE_MEDIA权限，需要用户授权
+                Log.d(TAG, "No MANAGE_MEDIA permission, requesting user authorization")
+                requestWritePermission(context, uri, originalName, newName)
+                false
             }
-            // 只有在没有权限时才请求用户授权
-            Log.d(TAG, "Requesting user permission")
-            requestWritePermission(context, uri, originalName, newName)
-            false
         } catch (e: Exception) {
             Log.e(TAG, "Failed to rename screenshot", e)
             false
@@ -331,15 +340,6 @@ class ScreenshotWatcherService : LifecycleService() {
         } catch (e: Exception) {
             Log.e(TAG, "Error requesting write permission", e)
         }
-    }
-    
-    /**
-     * 设置写入权限状态并持久化
-     */
-    private fun setWritePermission(granted: Boolean) {
-        hasWritePermission = granted
-        prefs.edit().putBoolean(KEY_HAS_WRITE_PERMISSION, granted).apply()
-        Log.d(TAG, "Write permission status updated: $granted")
     }
 
     override fun onDestroy() {
