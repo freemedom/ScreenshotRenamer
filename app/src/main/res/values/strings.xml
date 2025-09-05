@@ -13,6 +13,8 @@
     <!-- 权限相关 -->
     <string name="permission_usage_stats_title">需要使用情况访问权限</string>
     <string name="permission_usage_stats_message">为了获取当前前台应用信息，需要在设置中开启"使用情况访问"权限</string>
+    <string name="permission_media_location_title">需要媒体位置访问权限</string>
+    <string name="permission_media_location_message">为了完整访问媒体文件信息，需要授予媒体位置访问权限</string>
     <string name="permission_go_settings">去设置</string>
     <string name="permission_cancel">取消</string>
     

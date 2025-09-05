@@ -130,7 +130,14 @@ class MainActivity : AppCompatActivity() {
             PackageManager.PERMISSION_GRANTED // 旧版本默认有通知权限
         }
 
-        // 检查媒体管理权限（Android 12+）
+        // 检查媒体位置权限（Android 10+）
+        val mediaLocationPermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_MEDIA_LOCATION)
+        } else {
+            PackageManager.PERMISSION_GRANTED // 旧版本不需要此权限
+        }
+
+        // 检查媒体管理权限（Android 13+）
         val manageMediaPermission = checkManageMediaPermission()
 
         // 检查使用情况访问权限
@@ -138,6 +145,7 @@ class MainActivity : AppCompatActivity() {
 
         return mediaPermission == PackageManager.PERMISSION_GRANTED &&
                 notificationPermission == PackageManager.PERMISSION_GRANTED &&
+                mediaLocationPermission == PackageManager.PERMISSION_GRANTED &&
                 manageMediaPermission &&
                 usagePermission
     }
@@ -184,6 +192,13 @@ class MainActivity : AppCompatActivity() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
                 permissionsToRequest.add(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
+
+        // 检查媒体位置权限（Android 10+）
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_MEDIA_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                permissionsToRequest.add(Manifest.permission.ACCESS_MEDIA_LOCATION)
             }
         }
 
