@@ -267,6 +267,16 @@ class ScreenshotWatcherService : LifecycleService() {
         }
 
         return try {
+            // 检查一下MediaStore.canManageMedia是否获得权限
+            val canManageMedia = MediaStore.canManageMedia(context)
+            Log.d(TAG, "canManageMedia: $canManageMedia")
+            if (!canManageMedia) {
+                Log.w(TAG, "No MANAGE_MEDIA permission, requesting user authorization")
+                // requestWritePermission(context, uri, originalName, newName)
+                return false
+            }
+            // Log uri
+            Log.d(TAG, "uri: $uri")
             val rowsUpdated = context.contentResolver.update(uri, cv, null, null)
             if (rowsUpdated > 0) {
                 Log.d(TAG, "Screenshot renamed successfully: $originalName -> $newName")
