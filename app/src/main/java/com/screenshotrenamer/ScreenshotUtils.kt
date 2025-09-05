@@ -43,12 +43,13 @@ object ScreenshotUtils {
         )
 
         try {
+            // 查询按时间降序排列的截图，moveToFirst()会获取最新的一条
             context.contentResolver.query(
                 MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
                 projection, 
                 selection, 
                 args, 
-                "${MediaStore.Images.Media.DATE_ADDED} DESC LIMIT 1"
+                "${MediaStore.Images.Media.DATE_ADDED} DESC"
             )?.use { cursor ->
                 if (cursor.moveToFirst()) {
                     val id = cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID))

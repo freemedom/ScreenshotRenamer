@@ -4,6 +4,7 @@ import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
+import android.app.RecoverableSecurityException
 import android.content.ContentUris
 import android.content.ContentValues
 import android.content.Context
@@ -233,10 +234,50 @@ class ScreenshotWatcherService : LifecycleService() {
         return try {
             val rowsUpdated = context.contentResolver.update(uri, cv, null, null)
             rowsUpdated > 0
+        } catch (e: RecoverableSecurityException) {
+            Log.d(TAG, "RecoverableSecurityException occurred, requesting user permission")
+            // 需要用户一次性授权后再执行
+            requestWritePermission(context, uri, originalName, newName)
+            false
         } catch (e: Exception) {
             Log.e(TAG, "Failed to rename screenshot", e)
-            // TODO: 处理 RecoverableSecurityException，需要用户授权
             false
+        }
+    }
+
+    private fun requestWritePermission(context: Context, uri: Uri, originalName: String, newName: String) {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                // 创建写入请求
+                val writeRequest = MediaStore.createWriteRequest(context.contentResolver, listOf(uri))
+                
+                // 创建通知，引导用户点击授权
+                val notification = NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
+                    .setContentTitle(getString(R.string.permission_write_title))
+                    .setContentText(getString(R.string.permission_write_content, originalName))
+                    .setStyle(
+                        NotificationCompat.BigTextStyle()
+                            .setBigContentTitle(getString(R.string.permission_write_title))
+                            .bigText(getString(R.string.permission_write_big_text, originalName, newName))
+                    )
+                    .setSmallIcon(R.drawable.ic_screenshot)
+                    .setPriority(NotificationCompat.PRIORITY_HIGH)
+                    .setAutoCancel(true)
+                    .setContentIntent(writeRequest)
+                    .build()
+
+                val notificationManager = NotificationManagerCompat.from(this)
+                try {
+                    if (NotificationManagerCompat.from(this).areNotificationsEnabled()) {
+                        notificationManager.notify("write_permission_${System.currentTimeMillis()}".hashCode(), notification)
+                        Log.d(TAG, "Write permission notification sent")
+                    }
+                } catch (e: SecurityException) {
+                    Log.w(TAG, "无法发送权限请求通知", e)
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error requesting write permission", e)
         }
     }
 

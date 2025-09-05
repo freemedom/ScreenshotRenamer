@@ -30,4 +30,9 @@
     <!-- Toast消息 -->
     <string name="toast_monitoring_started">截图监控已开启</string>
     <string name="toast_monitoring_stopped">截图监控已停止</string>
+    
+    <!-- 写入权限请求 -->
+    <string name="permission_write_title">需要权限授权</string>
+    <string name="permission_write_content">点击以授权重命名截图：%1$s</string>
+    <string name="permission_write_big_text">系统需要您的授权才能重命名截图文件。\n\n原文件名：%1$s\n新文件名：%2$s\n\n点击此通知进行授权。</string>
 </resources>
