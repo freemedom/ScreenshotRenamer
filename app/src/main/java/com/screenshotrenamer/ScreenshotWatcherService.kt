@@ -9,6 +9,7 @@ import android.content.ContentUris
 import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.database.ContentObserver
 import android.net.Uri
 import android.os.Build
@@ -30,7 +31,13 @@ class ScreenshotWatcherService : LifecycleService() {
         const val ACTION_START_MONITORING = "START_MONITORING"
         const val ACTION_STOP_MONITORING = "STOP_MONITORING"
         private const val TAG = "ScreenshotWatcher"
+        private const val PREFS_NAME = "screenshot_renamer_prefs"
+        private const val KEY_HAS_WRITE_PERMISSION = "has_write_permission"
     }
+    
+    // 用于跟踪是否已经获得过写入权限的标志
+    private var hasWritePermission = false
+    private lateinit var prefs: SharedPreferences
 
     private val observer = object : ContentObserver(Handler(Looper.getMainLooper())) {
         override fun onChange(selfChange: Boolean, uri: Uri?) {
@@ -47,6 +54,11 @@ class ScreenshotWatcherService : LifecycleService() {
     override fun onCreate() {
         super.onCreate()
         createNotificationChannel()
+        
+        // 初始化SharedPreferences并恢复权限状态
+        prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        hasWritePermission = prefs.getBoolean(KEY_HAS_WRITE_PERMISSION, false)
+        Log.d(TAG, "Service created, hasWritePermission restored: $hasWritePermission")
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -64,6 +76,8 @@ class ScreenshotWatcherService : LifecycleService() {
                 val packageName = intent.getStringExtra("package_name")
                 
                 if (originalName != null && newName != null && packageName != null) {
+                    // 用户已经授权成功，设置权限标志并持久化
+                    setWritePermission(true)
                     showRenameSuccessNotification(originalName, newName, packageName)
                 }
             }
@@ -243,10 +257,24 @@ class ScreenshotWatcherService : LifecycleService() {
 
         return try {
             val rowsUpdated = context.contentResolver.update(uri, cv, null, null)
-            rowsUpdated > 0
+            if (rowsUpdated > 0) {
+                // 重命名成功，如果之前没有权限，现在设置为已有权限
+                if (!hasWritePermission) {
+                    setWritePermission(true)
+                }
+                true
+            } else {
+                false
+            }
         } catch (e: RecoverableSecurityException) {
-            Log.d(TAG, "RecoverableSecurityException occurred, requesting user permission")
-            // 需要用户一次性授权后再执行
+            Log.d(TAG, "RecoverableSecurityException occurred")
+            if (hasWritePermission) {
+                // 理论上不应该到这里，如果到了说明权限状态有问题
+                Log.w(TAG, "Permission was granted before but still got RecoverableSecurityException")
+                setWritePermission(false)
+            }
+            // 只有在没有权限时才请求用户授权
+            Log.d(TAG, "Requesting user permission")
             requestWritePermission(context, uri, originalName, newName)
             false
         } catch (e: Exception) {
@@ -303,6 +331,15 @@ class ScreenshotWatcherService : LifecycleService() {
         } catch (e: Exception) {
             Log.e(TAG, "Error requesting write permission", e)
         }
+    }
+    
+    /**
+     * 设置写入权限状态并持久化
+     */
+    private fun setWritePermission(granted: Boolean) {
+        hasWritePermission = granted
+        prefs.edit().putBoolean(KEY_HAS_WRITE_PERMISSION, granted).apply()
+        Log.d(TAG, "Write permission status updated: $granted")
     }
 
     override fun onDestroy() {
