@@ -328,7 +328,7 @@ class ScreenshotWatcherService : LifecycleService() {
             } else {
                 // 没有MANAGE_MEDIA权限，需要用户授权
                 Log.d(TAG, "No MANAGE_MEDIA permission, requesting user authorization")
-                requestWritePermission(context, uri, originalName, newName)
+                requestWritePermission(context, uri, originalName, newName) // 这里 PermissionActivity 没用了 
                 false
             }
         } catch (e: Exception) {
