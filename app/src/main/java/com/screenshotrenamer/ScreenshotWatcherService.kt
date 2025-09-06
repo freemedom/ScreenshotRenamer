@@ -35,14 +35,13 @@ class ScreenshotWatcherService : LifecycleService() {
         private const val TAG = "ScreenshotWatcher"
         private const val PREFS_NAME = "screenshot_renamer_prefs"
         private const val KEY_HAS_WRITE_PERMISSION = "has_write_permission"
-        private const val DEBOUNCE_DELAY = 6000L // 2秒防抖延迟
+        private const val DEBOUNCE_DELAY = 2000L // 2秒防抖延迟
     }
     
     // SharedPreferences（暂时保留，可能用于其他配置）
     private lateinit var prefs: SharedPreferences
     
     // 防抖相关变量
-    private val processedFiles = mutableSetOf<String>()
     private var lastProcessTime = 0L
 
     private val observer = object : ContentObserver(Handler(Looper.getMainLooper())) {
@@ -207,22 +206,14 @@ class ScreenshotWatcherService : LifecycleService() {
             val (screenshotUri, originalName) = screenshotInfo
             Log.d(TAG, "208")
 
-            // 防抖逻辑：如果同一文件在短时间内多次触发，则忽略
+            // 防抖逻辑：2秒内多次触发只处理第一次
             val currentTime = System.currentTimeMillis()
-            if (processedFiles.contains(originalName)) {
-                if (currentTime - lastProcessTime < DEBOUNCE_DELAY) {
-                    Log.d(TAG, "Debounce: Ignoring duplicate event for $originalName")
-                    return
-                }
+            if (currentTime - lastProcessTime < DEBOUNCE_DELAY) {
+                Log.d(TAG, "Debounce: Ignoring duplicate event within ${DEBOUNCE_DELAY}ms")
+                return
             }
-            
-            // 清理过期的处理记录（超过5分钟的记录）
-            if (currentTime - lastProcessTime > 300000) { // 5分钟
-                processedFiles.clear()
-            }
-            
-            // 记录当前文件和时间
-            processedFiles.add(originalName)
+            // 因为上一个processedFiles可能还没存进去下一个就执行了
+            // 更新最后处理时间
             lastProcessTime = currentTime
 
             Log.d(TAG, "Found new screenshot: $originalName")
