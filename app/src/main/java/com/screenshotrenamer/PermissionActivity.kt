@@ -14,7 +14,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 
 /**
- * 权限请求Activity
+ * 权限请求Activity 这个暂时没用了
  * 
  * 这是一个透明的Activity，专门用于处理Android 10+的媒体文件写入权限。
  * 当需要重命名截图文件时，如果遇到RecoverableSecurityException，

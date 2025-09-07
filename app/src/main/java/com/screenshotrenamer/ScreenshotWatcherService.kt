@@ -35,7 +35,7 @@ class ScreenshotWatcherService : LifecycleService() {
         private const val TAG = "ScreenshotWatcher"
         private const val PREFS_NAME = "screenshot_renamer_prefs"
         private const val KEY_HAS_WRITE_PERMISSION = "has_write_permission"
-        private const val DEBOUNCE_DELAY = 2000L // 2秒防抖延迟
+        private const val DEBOUNCE_DELAY = 1000L // 1秒防抖延迟
     }
     
     // SharedPreferences（暂时保留，可能用于其他配置）
@@ -206,7 +206,7 @@ class ScreenshotWatcherService : LifecycleService() {
             val (screenshotUri, originalName) = screenshotInfo
             Log.d(TAG, "208")
 
-            // 防抖逻辑：2秒内多次触发只处理第一次
+            // 防抖逻辑：1秒内多次触发只处理第一次
             val currentTime = System.currentTimeMillis()
             if (currentTime - lastProcessTime < DEBOUNCE_DELAY) {
                 Log.d(TAG, "Debounce: Ignoring duplicate event within ${DEBOUNCE_DELAY}ms")
@@ -225,6 +225,12 @@ class ScreenshotWatcherService : LifecycleService() {
             }
 
             Log.d(TAG, "Top package: $packageName")
+
+            // 已经改过名就跳过
+            if (originalName.contains("_$packageName")) {
+                Log.d(TAG, "Screenshot already renamed: $originalName")
+                return
+            }
 
             // 执行重命名
             val success = renameWithPackageSuffix(this, screenshotUri, originalName, packageName)
@@ -254,11 +260,6 @@ class ScreenshotWatcherService : LifecycleService() {
         originalName: String,
         pkg: String
     ): Boolean {
-        // 已经改过名就跳过
-        if (originalName.contains("_$pkg")) {
-            Log.d(TAG, "Screenshot already renamed: $originalName")
-            return true
-        }
 
         val dot = originalName.lastIndexOf('.')
         val (base, ext) = if (dot > 0) originalName.substring(0, dot) to originalName.substring(dot)

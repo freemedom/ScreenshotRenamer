@@ -72,7 +72,7 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="注意：首次使用需要授予媒体访问权限和使用情况访问权限"
+        android:text="注意：首次使用需要授予媒体访问权限、使用情况访问权限、悬浮通知权限等权限"
         android:textSize="12sp"
         android:textColor="@color/status_stopped"
         android:gravity="center"
