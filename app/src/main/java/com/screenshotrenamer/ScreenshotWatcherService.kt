@@ -35,7 +35,7 @@ class ScreenshotWatcherService : LifecycleService() {
         private const val TAG = "ScreenshotWatcher"
         private const val PREFS_NAME = "screenshot_renamer_prefs"
         private const val KEY_HAS_WRITE_PERMISSION = "has_write_permission"
-        private const val DEBOUNCE_DELAY = 1000L // 1秒防抖延迟
+        private const val DEBOUNCE_DELAY = 1500L // 1秒防抖延迟
     }
     
     // SharedPreferences（暂时保留，可能用于其他配置）
